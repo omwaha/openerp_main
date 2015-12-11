@@ -1,0 +1,161 @@
+<openerp>
+<data>
+	
+	<menuitem id="records_base_menu" name="Records"/>
+	
+	<menuitem id="records_main_menu" name="Records"
+                  parent="records_base_menu"/>
+                  
+	<!-- Records view -->
+                  
+	<record id="records_tree_view" model="ir.ui.view">
+		<field name="model">data.record</field>
+		<field name="name">records.tree.view</field>
+		<field name="field_parent">sub_records</field>
+		<field name="arch" type="xml">
+			<tree string="Records" toolbar="1">
+				<field name="path" />
+				<field name="name" />
+				<field name="key" />
+				<field name="str_value" />
+				<field name="parent" />
+			</tree>
+		</field>
+	</record>
+	
+	<record id="records_filtered_list_view" model="ir.ui.view">
+		<field name="model">data.record</field>
+		<field name="name">records.list.view</field>
+		<field name="arch" type="xml">
+			<tree string="Records">
+				<field name="path" />
+				<field name="name" />
+				<field name="key" />
+				<field name="str_value" />
+				<field name="parent" />
+			</tree>
+		</field>
+	</record>
+	
+	<record id="records_normal_list_view" model="ir.ui.view">
+		<field name="model">data.record</field>
+		<field name="name">records.list.view</field>
+		<field name="arch" type="xml">
+			<tree string="Records">
+				<field name="path" />
+				<field name="name" />
+				<field name="key" />
+				<field name="str_value" />
+				<field name="parent" />
+			</tree>
+		</field>
+	</record>
+	
+	<record id="data_form_view" model="ir.ui.view">
+		<field name="model">data.record</field>
+		<field name="name">data.form.view</field>
+		<field name="arch" type="xml">
+			<form string="data">
+			<sheet>
+			<group>
+				<group>
+					<field name="name" />
+					<field name="key" />
+					<field name="functions" widget="many2many_tags"/>
+				</group>
+				<group>
+					<field name="parent" />
+					<field name="path" />
+					<field name="tunnel" />
+				</group>
+			</group>
+			<group>
+				<field name="value">
+					<tree editable="bottom">
+						<field name="content" />
+					</tree>
+				</field>
+				
+				<field name="layers" widget="many2many_checkboxes"/>
+				
+				<field name="sub_records">
+					<tree editable="bottom">
+						<field name="name" />
+						<field name="key" />
+						<field name="str_value" />
+						<button name="edit_btn" string="Edit" type="object"/>
+					</tree>
+				</field>
+			</group>
+			</sheet>
+			</form>
+		</field>
+	</record>
+	
+	<!-- <record id="view_data_search" model="ir.ui.view">
+       	<field name="name">data.search</field>
+        <field name="model">data.data</field>
+        <field name="arch" type="xml">
+          	<search string="Data">
+            	<field name="title" string="Title"/>
+       		</search>
+       </field>
+	</record> -->
+        
+	<record model="ir.actions.act_window" id="records_tree_menu_action">
+		<field name="name">Records</field>
+		<field name="view_type">tree</field>
+		<field name="res_model">data.record</field>
+		<!-- <field name="view_mode">tree,form</field> -->
+		<!-- <field name="field_parent">sub_records</field> -->
+		<field name="domain">[('parent_id','=',False)] </field>
+	</record>
+	
+	<record model="ir.actions.act_window" id="records_list_menu_action">
+		<field name="name">Records</field>
+		<field name="view_type">form</field>
+		<field name="res_model">data.record</field>
+		<field name="view_mode">tree,form</field>
+		<!-- <field name="field_parent">child_ids</field> -->
+		<!-- <field name="domain">[('parent_id','=',False)] </field> -->
+	</record>
+	
+	<record model="ir.actions.act_window" id="records_list_filtered_action">
+		<field name="name">Records</field>
+		<field name="view_type">form</field>
+		<field name="res_model">data.record</field>
+		<field name="view_mode">tree,form</field>
+		<field name="domain">['|',('id','=',active_id),('parent','=',active_id)]</field>
+	</record>
+	
+	<record id="data_record_tree_open" model="ir.values">
+        <field eval="'tree_but_open'" name="key2"/>
+        <field eval="'data.record'" name="model"/>
+        <field name="name">Records</field>
+        <field eval="'ir.actions.act_window,%d'%records_list_filtered_action" name="value"/>
+    </record>
+            
+    <record id="records_tree_view_action_link" model="ir.actions.act_window.view">
+		<field eval="1" name="sequence" />
+		<field name="view_mode">tree</field>
+		<field name="view_id" ref="records_tree_view" />
+		<field name="act_window_id" ref="records_tree_menu_action" />
+	</record>
+	
+	<record id="records_list_view_action_link" model="ir.actions.act_window.view">
+		<field eval="1" name="sequence" />
+		<field name="view_mode">tree</field>
+		<field name="view_id" ref="records_normal_list_view" />
+		<field name="act_window_id" ref="records_list_menu_action" />
+	</record>
+	
+	<menuitem id="records_menu_list" name="Records List"
+                  parent="records_main_menu" action="records_list_menu_action"/>
+                  
+    <menuitem id="records_menu_tree" name="Records Tree"
+                  parent="records_main_menu" action="records_tree_menu_action"/>
+	
+	<!-- // data view -->
+	
+	</data>
+</openerp>
