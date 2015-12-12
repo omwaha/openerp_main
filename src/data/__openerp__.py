@@ -8,7 +8,7 @@
     'license' : 'AGPL-3',
     'description':"",
     'data': [
-             'views/data_view.xml',
+             #'views/data_view.xml',
              #'data/data.xml',
              ],
     #'js': ['static/src/js/data_fields.js'],

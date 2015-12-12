@@ -137,3 +137,7 @@ class data_function(models.Model):
     name = fields.Char('Name',size=500)
     code = fields.Text('Code')
     
+class data_selection(models.Model):
+    _name = 'data.selection'
+    
+    name = fields.Char('Name',size=500)
