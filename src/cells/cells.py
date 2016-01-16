@@ -31,7 +31,7 @@ class cell(models.Model):
     def write(self,vals):
         if vals.has_key('data_stream'):
             #if vals[data_stream] = [4,4,..]:
-            self.on_new_data(vals[data_stream])
+            self.on_new_data(vals['data_stream'])
 
 class cell_selector(models.Model):
     _name = 'cells.cell.selector'
