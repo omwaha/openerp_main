@@ -1,5 +1,6 @@
 
 from openerp import models, fields, api
+from __builtin__ import set
 
 
 class star(models.Model):
@@ -9,43 +10,34 @@ class star(models.Model):
     
     name = fields.Char('Name')
     
-    #selector_levels = fields.One2many('stars.selector.level','star','Selector Levels')
-    
-    star_selector = fields.Many2one('stars.star.selector','star Selector', required=True, ondelete='cascade')
-    
+    selector_levels = fields.One2many('stars.selector.level','star','Selector Levels', ondelete='cascade')
+     
     executer = fields.Many2one('stars.executer', 'Executer')
     functions = fields.Many2many('stars.function','Functions')
     
     data_stream = fields.One2many('stars.data', 'stream','Data')
     data_store = fields.Many2many('stars.data', string='Data Store')
     
-    marks = fields.One2many()
+    marks = fields.One2many('stars.mark','star', 'Marks')
     
     @api.one
-    def on_new_data(self,data):
-        #new_data = 
-        self.star_selector.select(self,data)
-    
+    def consume(self,data_lst):
+        self.select(data_lst)
+        self.executer.execute()
     
     @api.one
-    def write(self,vals):
-        if vals.has_key('data_stream'):
-            #if vals[data_stream] = [4,4,..]:
-            self.on_new_data(vals['data_stream'])
+    def select(self,data_lst):
+        sdata_lst = data_lst
+        for sl in self.selector_levels:
+            sdata_lst = sl.select(sdata_lst)
+            if not sdata_lst:
+                break
+        
+        if sdata_lst:
+            self.data_stream = self.data_stream+sdata_lst
+        else:
+            self.data_stream = []
 
-class star_selector(models.Model):
-    _name = 'stars.star.selector'
-    
-    star = fields.Many2one('stars.star', 'star')
-    selector_levels = fields.One2many('stars.selector.level','star','Selector Levels')
-    
-    selected_data = fields.Many2many('stars.data', string='Selected Data')
-    
-    @api.one
-    def select(self,star,data):
-        self.selected_data = data
-        for sl_lvl in self.selector_levels:
-            sl_lvl.select(star,data)
 
 class selection_level(models.Model):
     _name = 'stars.selector.level'
@@ -54,44 +46,41 @@ class selection_level(models.Model):
     star = fields.Many2one('stars.star', 'star')
     seq = fields.Integer('Sequence')
     
+    
     @api.one
-    def select(self,star,data):
+    def select(self,data_lst):
+        sdata_set = set()
         for sel in self.selectors:
-            sel.apply(data,star)
+            for data in data_lst:
+                sdata_lst = sel.select(data,self.star)
+                if sdata_lst:
+                    for sdata in sdata_lst:
+                        sdata_set.add(sdata)
+                
+        return list(sdata_set) 
             
      
 class selector(models.Model):
     _name = 'stars.selector'
     
     name = fields.Char('Name')
-    type = fields.Selection([('selector','Selector'),('star','star')], 'Type')
-    star = fields.Many2one('stars.star', 'Selector star')
-    selector = fields.Many2one('stars.selector.selector', 'Selector')
-    
-    @api.one
-    def apply(self,data,star):
-        if self.type == 'selector':
-            pass
-        elif self.type == 'star':
-            pass
-          
-class selector_selector(models.Model):
-    _name = 'stars.selector.selector'
-    
     selection_exp = fields.Text('Selection Expression')
     
     @api.one
-    def apply(self,data,star,selector_lvl):
+    def select(self,data,star):
         #query the data
-        star.marks += self.env['stars.mark'].create({'name':'', 'data': data})
-        star.star_selector.selected_data += data
-        pass
+        sdata = data
+        star.marks += self.env['stars.mark'].create({'name':'mark1', 'data': sdata})
+        #return [data]
+        return sdata
+    
       
 class mark(models.Model):
     _name = 'stars.mark'
     
     name = fields.Char('Name')
     data = fields.Many2one('stars.data', 'Data')
+    star = fields.Many2one('stars.star','Star')
     
 class data(models.Model):
     _name = 'stars.data'
