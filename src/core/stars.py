@@ -1,7 +1,5 @@
 
 from openerp import models, fields, api
-from __builtin__ import set
-
 
 class star(models.Model):
     _name = 'stars.star'
@@ -13,7 +11,6 @@ class star(models.Model):
     selector_levels = fields.One2many('stars.selector.level','star','Selector Levels', ondelete='cascade')
      
     executer = fields.Many2one('stars.executer', 'Executer')
-    functions = fields.Many2many('stars.function','Functions')
     
     data_stream = fields.One2many('stars.data', 'stream','Data')
     data_store = fields.Many2many('stars.data', string='Data Store')
@@ -38,42 +35,6 @@ class star(models.Model):
         else:
             self.data_stream = []
 
-
-class selection_level(models.Model):
-    _name = 'stars.selector.level'
-    
-    selectors = fields.Many2many('stars.selector',string='Selectors')
-    star = fields.Many2one('stars.star', 'star')
-    seq = fields.Integer('Sequence')
-    
-    
-    @api.one
-    def select(self,data_lst):
-        sdata_set = set()
-        for sel in self.selectors:
-            for data in data_lst:
-                sdata_lst = sel.select(data,self.star)
-                if sdata_lst:
-                    for sdata in sdata_lst:
-                        sdata_set.add(sdata)
-                
-        return list(sdata_set) 
-            
-     
-class selector(models.Model):
-    _name = 'stars.selector'
-    
-    name = fields.Char('Name')
-    selection_exp = fields.Text('Selection Expression')
-    
-    @api.one
-    def select(self,data,star):
-        #query the data
-        sdata = data
-        star.marks += self.env['stars.mark'].create({'name':'mark1', 'data': sdata})
-        #return [data]
-        return sdata
-    
       
 class mark(models.Model):
     _name = 'stars.mark'
