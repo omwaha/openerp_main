@@ -11,6 +11,7 @@ class star(models.Model):
     selector_levels = fields.One2many('stars.selector.level','star','Selector Levels', ondelete='cascade')
      
     executer = fields.Many2one('stars.executer', 'Executer')
+    parent_executer = fields.Many2one('stars.executer', 'Parent Executer')
     
     data_stream = fields.One2many('stars.data', 'stream','Data')
     data_store = fields.Many2many('stars.data', string='Data Store')
