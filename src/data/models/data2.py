@@ -1,60 +1,60 @@
+es = []
+ps = []
+rs = []
 
-from openerp import models, fields, api
+def find_p(n,v, les=None):
+    if not les:les=es
+    a=filter(lambda x: x.name==n and x.value==v,ps)
+    return map(lambda x: x.e,a)
 
-class data_record(models.Model):
-    _name = 'data.record'
+def find_class(cls,les=None):
+    find_p('class',cls,les)
+
+class E():
+    def __init__(self,name=None,p_tuple_lst=[]):
+        self.name = name
+        self.p = []
+        for p in p_tuple_lst:
+            P(self, p[0],p[1])
+        es.append(self)
+
+
+class P():
+    def __init__(self,e,name,value):
+        self.e = e
+        self.name = name
+        self.value = value
+        if e: e.p.append(self)
+        ps.append(self)
     
-    name = fields.Char('Name',size=500,required=True)
-    path = fields.Text('Path', compute='_compute_path')
-    
-    keys = fields.Many2many('data.key',string='Keys')
-    
-    sub_records = fields.One2many('data.record','parent','Sub Records')
-    parent = fields.Many2one('data.record','Parent Record')
-    
-    store = fields.Many2one('data.store','Store')
-    layers = fields.Many2many('data.layer', string='Layers')
-    
-    type = fields.Selection([('data','Data'),('function','Function'),('selection','Selection')])
-    
-    @api.depends('parent','name')
-    @api.one
-    def _compute_path(self):
-        path = ''
-        if self.name:
-            path = '/'+self.name[:5]
-        parent = self.parent
-        while parent:
-            path = '/'+parent.name[:5]+path
-            parent = parent.parent
-        self.path = path
-        
-class data_key(models.Model):
-    _name = 'data.key'
-    
-    key = fields.Char('Key',size=500)
-    values = fields.Many2many('data.value',string='Values')
-    
-    attributes = fields.Many2many('data.record',string='Attributes')
-    
-class value(models.Model):
-    _name = 'data.value'
-    
-    exp = fields.Char('Expression',size=1000)
-    content = fields.Char('Content',size=1000,compute='_compute_content') 
-    
-    @api.one
-    def _compute_content(self):
+    def getVlaue(self):
+        return self.value
+
+class R():
+    def __init__(self,name):
         pass
+        
+        
+class onevent():
+    def __init__(self,event=None,q=None,cmd=None):
+        self.event=event
+        self.q=q
+        self.cmd=cmd
+        
     
-class data_store(models.Model):
-    _name = 'data.store'
-    
-    records = fields.One2many('data.record','store','Records')
-    attributes = fields.Many2many('data.record',string='Attributes')
-    
-class data_layer(models.Model):
-    _name = 'data.layer'
-    
-    name = fields.Char('Layer', size=300)
-    
+a1 = E('account1',[('class','account'),('acc_type','cash')])
+a2 = E('account2',[('class','account'),('acc_type','cash')])
+m1 = E('acc-move',[('class','account-move'),('from','account1'),('to','account2'),('amount',20)])
+
+def account_move():
+    find_class('account-move')
+def create_account_move(move):
+    a=find_class('account')
+    frm = filter(lambda x: x.name=='from',move.p)[0].getValue()
+    to = filter(lambda x: x.name=='to',move.p)[0].getValue()
+    frm_account=find_p('name',frm,a)
+    to_account=find_p('name',to,a)
+
+z = onevent('create',account_move)
+
+print a1.p[0].name
