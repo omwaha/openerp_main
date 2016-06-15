@@ -8,7 +8,6 @@ class data_record(models.Model):
     value = fields.Text('Value')
     object = fields.Many2one('data.object', 'Object')
 
-
 class data_object(models.Model):
     _name = 'data.object'
     
@@ -50,14 +49,28 @@ class data_query(models.Model):
     
     name = fields.Char('Name')
     type = fields.Selection([('c','Create'),('r','Read'),('u','Update'),('d','Delete')], 'Type')
+    expr = fields.Text('Expression')
+    
+    
+class data_statement(models.Model):
+    _name = 'data.statement'
+    
+    name = fields.Char('Name')
+    type = fields.Selection([('c','Create'),('r','Read'),('u','Update'),('d','Delete')], 'Type')
+    queries = fields.One2many('data.qeury.statement', 'statement','Statement Queries')
+    
+    @api.one
+    def run_statement(self):
+        pass
     
     
 class data_query_statement(models.Model):
     _name = 'data.qeury.statement'
     
     name = fields.Char('Name')
-    expr = fields.Text('Expression')
-    type = fields.Selection([('c','Create'),('r','Read'),('u','Update'),('d','Delete')], 'Type')
+    statement = fields.Many2one('data.statement', 'Statement')
+    query = fields.Many2one('data.query', 'Query')
+    sequence = fields.Integer('Sequence')
     
     
     
