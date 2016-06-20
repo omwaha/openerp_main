@@ -3,6 +3,13 @@ ps = []
 rs = []
 vs = []
 
+p_name_dict = {'name':'p'}
+p_value_dict = {'value':'p'}
+e_name_dict = {'name':'e'}
+r_name_dict = {'name':'r'}
+v_name_dict = {'name':'v'}
+v_event_dict = {'v':'v'}
+
 def findby_p(n,v, les=None):
     if not les:les=es
     a=filter(lambda x: x.name==n and x.value==v and x.e in les, ps)
@@ -48,6 +55,16 @@ class E():
 
 
 class P():
+    
+    def __call__(self,e,name,value):
+        if e:
+            prev = filter(lambda x: x.name==name,e.vs)
+            if prev:
+                prev = prev[0]
+                prev.setValue(value)
+                return prev
+        return super(P,self).__call__()
+    
     def __init__(self,e,name,value):
         self.e = e
         self.name = name
@@ -64,18 +81,33 @@ class P():
         return str( (self.name,self.value) )
 
 class R():
-    def __init__(self,name,onevent_lst=[]):
+    def __init__(self,name,vs=[]):
         self.name=name
-        for onev in onevent_lst:
-            vs.append( onevent(self,onev[0],onev[1],onev[2]) )
+        for v in vs:
+            vs.append( V(self,v[0],v[1],v[2],v[3]) )
         
         
-class onevent():
-    def __init__(self,r=None,event=None,q=None,cmd=None):
+class V():
+    
+    def __call__(self,name,r=None,event=None,q=None,cmd=None,active=True):
+        if r:
+            prev = filter(lambda x: x.name==name,r.onevent_lst)
+            if prev:
+                prev = prev[0]
+                if event: prev.event = event
+                if q: prev.q = q
+                if cmd: prev.cmd = cmd
+                if active: prev.active = active
+                return prev
+        return super(V,self).__call__()
+            
+    def __init__(self,name,r=None,event=None,q=None,cmd=None,active=True):
+        self.r=r
+        self.name = name
         self.event=event
         self.q=q
         self.cmd=cmd
-        self.r=r
+        self.active = active
     
     def run(self,e):
         if self.q(e):
@@ -98,7 +130,7 @@ def create_account_move(move):
     print frm_account
     print to_account
 
-z = R('account_move',[('create',account_move,create_account_move)] )
+z = R('account_move',[('a','create',account_move,create_account_move)] )
 
 
 a1 = E('account1',[('class','account'),('acc_type','cash')])
