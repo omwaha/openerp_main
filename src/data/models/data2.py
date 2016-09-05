@@ -3,13 +3,6 @@ ps = []
 rs = []
 vs = []
 
-p_name_dict = {'name':'p'}
-p_value_dict = {'value':'p'}
-e_name_dict = {'name':'e'}
-r_name_dict = {'name':'r'}
-v_name_dict = {'name':'v'}
-v_event_dict = {'v':'v'}
-
 def findby_p(n,v, les=None):
     if not les:les=es
     a=filter(lambda x: x.name==n and x.value==v and x.e in les, ps)
@@ -40,82 +33,68 @@ class E():
         for p in p_tuple_lst:
             P(self, p[0],p[1])
         es.append(self)
-        
-        for v in filter(lambda x: x.event=='create',vs) : v.run(self)
+        #run entity create events
+        for v in filter(lambda x: x.event=='e-create',vs) : v.run({'e':self})
     
     def add_p(self,name,value):
         P(self, name,value)
     def create_or_update_p(self,name,value):
         a=filter(lambda x: x.name==name,self.p)
-        if a:a[0].setValue(value)
+        if a: 
+            for b in a:
+                b.setValue(value)
         else:self.add_p(name,value)
+        
+        #run entity update events
+        for v in filter(lambda x: x.event=='e-update',vs) : v.run( {'e':self,'p':a} )
         
     def __str__(self):
         return str((self.name, map(lambda x: str(x),self.p) ))
 
 
 class P():
-    
-    def __call__(self,e,name,value):
-        if e:
-            prev = filter(lambda x: x.name==name,e.vs)
-            if prev:
-                prev = prev[0]
-                prev.setValue(value)
-                return prev
-        return super(P,self).__call__()
-    
     def __init__(self,e,name,value):
         self.e = e
         self.name = name
         self.value = value
         if e: e.p.append(self)
         ps.append(self)
-    
+        
+        #run property create events
+        for v in filter(lambda x: x.event=='p-create',vs) : v.run({'e':self.e,'p':self})
+        
     def getValue(self):
         return self.value
     def setValue(self,v):
         self.value = v
+        #run property update events
+        for v in filter(lambda x: x.event=='p-update',vs) : v.run({'e':self.e,'p':self})
       
     def __str__(self):
         return str( (self.name,self.value) )
 
 class R():
-    def __init__(self,name,vs=[]):
+    def __init__(self,name,onevent_lst=[]):
         self.name=name
-        for v in vs:
-            vs.append( V(self,v[0],v[1],v[2],v[3]) )
+        for onev in onevent_lst:
+            vs.append( onevent(self,onev[0],onev[1],onev[2]) )
         
         
-class V():
-    
-    def __call__(self,name,r=None,event=None,q=None,cmd=None,active=True):
-        if r:
-            prev = filter(lambda x: x.name==name,r.onevent_lst)
-            if prev:
-                prev = prev[0]
-                if event: prev.event = event
-                if q: prev.q = q
-                if cmd: prev.cmd = cmd
-                if active: prev.active = active
-                return prev
-        return super(V,self).__call__()
-            
-    def __init__(self,name,r=None,event=None,q=None,cmd=None,active=True):
-        self.r=r
-        self.name = name
+class onevent():
+    def __init__(self,r=None,event=None,q=None,cmd=None):
         self.event=event
         self.q=q
         self.cmd=cmd
-        self.active = active
+        self.r=r
     
-    def run(self,e):
-        if self.q(e):
-            self.cmd(e)
+    def run(self,d):
+        if self.q(d):
+            self.cmd(d)
         
-def account_move(e):
-    return bool(findby_class('account-move',[e]))
-def create_account_move(move):
+def q_account_move(d):
+    return bool(findby_class('account-move',[ d['e'] ]))
+def q_create_account_move(d):
+    move = d['e']
     accounts=findby_class('account')
     frm = get_p1('from',move)
     to = get_p1('to',move)
@@ -130,7 +109,9 @@ def create_account_move(move):
     print frm_account
     print to_account
 
-z = R('account_move',[('a','create',account_move,create_account_move)] )
+def q_copute_account_total(d):
+    
+z = R('account_move',[('e-create',q_account_move,q_create_account_move)] )
 
 
 a1 = E('account1',[('class','account'),('acc_type','cash')])
@@ -141,6 +122,4 @@ print a2
 
 m1 = E('account-move',[('class','account-move'),('from','account1'),('to','account2'),('amount',20)])
 m2 = E('account-move',[('class','account-move'),('from','account2'),('to','account1'),('amount',10)])
-
-
 
