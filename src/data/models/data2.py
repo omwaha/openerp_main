@@ -37,13 +37,15 @@ class E():
         for v in filter(lambda x: x.event=='e-create',vs) : v.run({'e':self})
     
     def add_p(self,name,value):
-        P(self, name,value)
+        return P(self, name,value)
     def create_or_update_p(self,name,value):
         a=filter(lambda x: x.name==name,self.p)
         if a: 
             for b in a:
                 b.setValue(value)
-        else:self.add_p(name,value)
+        else:
+            a = [self.add_p(name,value)]
+             
         
         #run entity update events
         for v in filter(lambda x: x.event=='e-update',vs) : v.run( {'e':self,'p':a} )
@@ -93,14 +95,17 @@ class onevent():
         
 def q_account_move(d):
     return bool(findby_class('account-move',[ d['e'] ]))
+def q_is_account_debt_credit_updated(d):
+    return bool(findby_class('account',[ d['e'] ])) and  ( filter(lambda x: x.name=='debt' or x.name=='credit',d['p']) )
+        
 def q_create_account_move(d):
     move = d['e']
     accounts=findby_class('account')
     frm = get_p1('from',move)
     to = get_p1('to',move)
     amount = get_p1('amount',move)
-    frm_account=findby_name(frm,accounts)[0]
-    to_account=findby_name(to,accounts)[0]
+    frm_account = findby_name(frm,accounts)[0]
+    to_account = findby_name(to,accounts)[0]
     
     #modify debt,credit of frm and to accounts
     frm_account.create_or_update_p('debt', get_p1_or0('debt',frm_account)+amount)
@@ -109,10 +114,14 @@ def q_create_account_move(d):
     print frm_account
     print to_account
 
-def q_copute_account_total(d):
+def q_compute_account_balance(d):
+    account = d['e']
+    c = get_p1_or0('credit',account)
+    d = get_p1_or0('debt',account)
+    account.create_or_update_p('balance', c-d)
     
 z = R('account_move',[('e-create',q_account_move,q_create_account_move)] )
-
+z2 = R('account_move',[('e-update',q_is_account_debt_credit_updated,q_compute_account_balance)] )
 
 a1 = E('account1',[('class','account'),('acc_type','cash')])
 a2 = E('account2',[('class','account'),('acc_type','cash')])
