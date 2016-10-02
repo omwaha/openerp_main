@@ -3,6 +3,7 @@ ps = []
 rs = []
 vs = []
 
+
 def findby_p(n,v, les=None):
     if not les:les=es
     a=filter(lambda x: x.name==n and x.value==v and x.e in les, ps)
@@ -24,7 +25,7 @@ def get_p1_or0(name,e):
     a=get_p1(name,e)
     if a==None: return 0
     else: return a
-    
+
 
 class E():
     def __init__(self,name=None,p_tuple_lst=[]):
@@ -33,23 +34,22 @@ class E():
         for p in p_tuple_lst:
             P(self, p[0],p[1])
         es.append(self)
-        #run entity create events
+       
         for v in filter(lambda x: x.event=='e-create',vs) : v.run({'e':self})
     
     def add_p(self,name,value):
         return P(self, name,value)
-    def create_or_update_p(self,name,value):
+    def update_or_create_p(self,name,value):
         a=filter(lambda x: x.name==name,self.p)
         if a: 
             for b in a:
                 b.setValue(value)
         else:
             a = [self.add_p(name,value)]
-             
-        
-        #run entity update events
+            
+       
         for v in filter(lambda x: x.event=='e-update',vs) : v.run( {'e':self,'p':a} )
-        
+                
     def __str__(self):
         return str((self.name, map(lambda x: str(x),self.p) ))
 
@@ -62,14 +62,14 @@ class P():
         if e: e.p.append(self)
         ps.append(self)
         
-        #run property create events
+       
         for v in filter(lambda x: x.event=='p-create',vs) : v.run({'e':self.e,'p':self})
         
     def getValue(self):
         return self.value
     def setValue(self,v):
         self.value = v
-        #run property update events
+    
         for v in filter(lambda x: x.event=='p-update',vs) : v.run({'e':self.e,'p':self})
       
     def __str__(self):
@@ -92,13 +92,20 @@ class onevent():
     def run(self,d):
         if self.q(d):
             self.cmd(d)
-        
-def q_account_move(d):
+    
+def tq_account_move(d):
     return bool(findby_class('account-move',[ d['e'] ]))
-def q_is_account_debt_credit_updated(d):
+def tq_is_account_debt_credit_updated(d):
     return bool(findby_class('account',[ d['e'] ])) and  ( filter(lambda x: x.name=='debt' or x.name=='credit',d['p']) )
-        
-def q_create_account_move(d):
+       
+
+def cq_create_account_move(d):
+    """
+E as acc_move
+Es[@account,@name=acc_move.from].debt as acc_debt
+acc_debt = acc_debt + acc_move.amount
+""" 
+
     move = d['e']
     accounts=findby_class('account')
     frm = get_p1('from',move)
@@ -107,21 +114,21 @@ def q_create_account_move(d):
     frm_account = findby_name(frm,accounts)[0]
     to_account = findby_name(to,accounts)[0]
     
-    #modify debt,credit of frm and to accounts
-    frm_account.create_or_update_p('debt', get_p1_or0('debt',frm_account)+amount)
-    to_account.create_or_update_p('credit', get_p1_or0('credit',to_account)+amount)
-    
+    frm_account.update_or_create_p('debt', get_p1_or0('debt',frm_account)+amount)
+    to_account.update_or_create_p('credit', get_p1_or0('credit',to_account)+amount)
     print frm_account
     print to_account
 
-def q_compute_account_balance(d):
+def cq_compute_account_balance(d):
     account = d['e']
     c = get_p1_or0('credit',account)
     d = get_p1_or0('debt',account)
-    account.create_or_update_p('balance', c-d)
-    
-z = R('account_move',[('e-create',q_account_move,q_create_account_move)] )
-z2 = R('account_move',[('e-update',q_is_account_debt_credit_updated,q_compute_account_balance)] )
+    account.update_or_create_p('balance', c-d)
+
+
+
+z = R('account_move',[('e-create',tq_account_move,cq_create_account_move)] )
+z2 = R('account_move',[('e-update',tq_is_account_debt_credit_updated,cq_compute_account_balance)] )
 
 a1 = E('account1',[('class','account'),('acc_type','cash')])
 a2 = E('account2',[('class','account'),('acc_type','cash')])
@@ -131,4 +138,5 @@ print a2
 
 m1 = E('account-move',[('class','account-move'),('from','account1'),('to','account2'),('amount',20)])
 m2 = E('account-move',[('class','account-move'),('from','account2'),('to','account1'),('amount',10)])
+
 
